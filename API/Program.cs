@@ -1,5 +1,9 @@
+using API.Data;
+using API.Entities;
 using API.Extensions;
 using API.Middleware;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -67,5 +71,32 @@ app.UseAuthorization();
 
 
 app.MapControllers();
+
+
+
+
+
+// para el seeding de users, va despues de MapControllers y antes de .Run
+using var scope = app.Services.CreateScope();
+var services = scope.ServiceProvider;
+try
+{
+    var context = services.GetRequiredService<DataContext>();
+    //var userManager = services.GetRequiredService<UserManager<AppUser>>();
+    //var roleManager = services.GetRequiredService<RoleManager<AppRole>>();
+
+    await context.Database.MigrateAsync();
+    await Seed.SeedUsers(context);
+    //await Seed.SeedUsers(userManager, roleManager);
+}
+catch (Exception ex)
+{
+    var logger = services.GetService<ILogger<Program>>();
+    logger.LogError(ex, "An error occurred during migration");
+}
+
+
+
+
 
 app.Run();
